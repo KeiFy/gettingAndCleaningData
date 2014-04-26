@@ -58,6 +58,4 @@ query <- paste(query, "from data", "group by", "  subject", ", activity", ";", s
 # run the query and store the results
 summarizedData <- sqldf(query)
 
-# reapply the original names
-
 write.table(summarizedData, "tidy_dataset.txt")
