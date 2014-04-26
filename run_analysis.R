@@ -1,6 +1,10 @@
 # the assumption is that the data is already downloaded and unpacked
 # if it is not, please source the get_data.R file here
 # it is also assumed that the working directory is set to where the files reside
+#
+# this script depends on sqldf package - please make sure it is installed before attempting to run this
+
+library(sqldf)
 
 activities <- read.table("UCI HAR Dataset/activity_labels.txt", col.names=c("activity.number", "activity.name"))
 features <- read.table("UCI HAR Dataset/features.txt", col.names=c("feature.no", "feature.name"))
@@ -18,8 +22,6 @@ features$column.name <- gsub("-mean", "Mean", features$column.name)
 features$column.name <- gsub("-std", "Std", features$column.name)
 features$column.name <- gsub("\\(\\)", "", features$column.name)
 features$column.name <- gsub("-", "", features$column.name)
-features
-
 
 subjects.train <- read.table("UCI HAR Dataset/train/subject_train.txt")
 subjects.test <- read.table("UCI HAR Dataset/test/subject_test.txt")
@@ -40,3 +42,22 @@ subjects <- rbind(subjects.train, subjects.test)[,]
 data$subject <- subjects
 data$activity <- activities$activity.name[y]
 
+# since I am a database specialist, summarizing the data is easiest for me using SQL
+#   the problem at hand is a simple group by query
+
+# programmatically construct the query
+#   newline character chosen as separator in order to visually inspect the query using cat(query) command
+query <- paste("select",  "  subject", ", activity", sep="\n")
+
+for (row in paste(", avg(", names(data)[-c(67, 68)], ") ", names(data)[-c(67, 68)], sep="")) {
+  query <- paste(query, row, sep = "\n")
+}
+
+query <- paste(query, "from data", "group by", "  subject", ", activity", ";", sep="\n")
+
+# run the query and store the results
+summarizedData <- sqldf(query)
+
+# reapply the original names
+
+write.table(summarizedData, "tidy_dataset.txt")
